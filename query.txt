@@ -1,0 +1,117 @@
+
+1.Display the details and age of police with rank=2.
+SELECT p.fname,pp.Police_ID, 2024 - EXTRACT(YEAR FROM p.DOB) AS Age
+FROM People p
+NATURAL JOIN Police_personal pp
+WHERE pp.rank = 2;
+
+2.All the police who once transferred to RJ9836.
+ SELECT pp.Police_ID 
+FROM police_personal AS pp 
+JOIN Transfer AS t ON t.PID = pp.Police_ID 
+WHERE t.New_Station_Id = 'RJ9836';
+
+3.Criminals who have sentenced to death and were caught by police of topmost rank.
+SELECT p.FName,p.lname,w.pid
+FROM People AS p
+JOIN Solved_Cases AS sc ON sc.aadhar_no = p.Aadhar_no
+JOIN All_Case AS ac ON sc.CID = ac.Case_ID
+JOIN Workings AS w ON w.CID = ac.Case_ID
+JOIN Police_personal AS pp ON pp.Police_ID = w.PID
+WHERE sc.Verdict = 'Death Sentence' AND pp.Rank = 1;
+
+4.Display all those policemen who have worked/working in more than 1 case
+SELECT PID
+FROM Workings
+GROUP BY PID
+HAVING COUNT(CID) > 1;
+
+5.Select name of person against whom a warrant was issued but was proved innocent later on.
+SELECT p.FName
+FROM Warrant AS w
+JOIN People AS p ON p.Aadhar_No = w.againt_aadhar
+JOIN Solved_Cases AS sc ON sc.Aadhar_no = p.Aadhar_No
+WHERE sc.Verdict = 'Innocent'
+GROUP BY p.FName, w.againt_aadhar
+HAVING COUNT(w.Warrant_no) = 1;
+
+6.Display suspects to have been sentenced to Death.
+SELECT p.FName ,p.aadhar_no
+FROM suspects AS s
+JOIN People AS p ON p.Aadhar_No = s.aadhar_no
+JOIN Solved_Cases AS sc ON sc.Aadhar_no = p.Aadhar_No
+WHERE sc.Verdict = 'Death Sentence'
+
+7.Display the number of guns in the station lead by Morgan.
+SELECT sid as station,station_incharge as incharge_id ,quantity as no_of_guns
+FROM Inventory AS i
+JOIN Police_Station AS ps ON i.SID = ps.Station_ID
+JOIN Police_Personal AS pp ON ps.Station_Incharge = pp.police_id
+JOIN people ON pp.Aadhar_No = people.Aadhar_No
+WHERE people.FName = 'Morgan'
+AND i.Name_of_item = 'Guns';
+
+8.Display vehicles allocated to Gujarat police station and bought after 2002.
+SELECT v.*, ps.Station_id, Fname
+FROM vehicles AS v
+JOIN Police_Station AS ps ON v.SID = ps.Station_ID
+JOIN Police_Personal AS pp ON ps.Station_Incharge = pp.police_id
+natural join people 
+WHERE v.SID LIKE 'GJ%%%%' 
+AND v.Purchase_Year > 2002;
+
+9.Update the transfer table entry of pid=22538 after he has been transferred from Gujarat to Maharashtra police station.
+UPDATE Transfer
+SET Old_Station = 'GJ1234', New_Station = 'MP9343'
+WHERE PID = 22538;	
+
+10.Display complete data of people doing morning sifts and age >40.
+SELECT *
+FROM Shifts AS s
+JOIN Police_Personal AS pp ON pp.Police_ID = s.PID
+JOIN people AS p ON p.Aadhar_No = pp.Aadhar_No
+WHERE s.Morning = 'Y' AND EXTRACT(YEAR FROM AGE(p.Dob)) > 40;
+
+11.Display Witness and Suspect details of a case.
+SELECT CID, Suspect_fname, Witness_fname
+FROM
+(
+    SELECT s.CID, p1.fname as Suspect_fname, p2.fname as Witness_fname
+    FROM Suspects as s
+    JOIN people as p1 ON p1.Aadhar_No = s.Aadhar_No
+    JOIN Witness as w ON s.CID = w.CID
+    JOIN people as p2 ON p2.Aadhar_No = w.Aadhar_No
+    GROUP BY s.CID, p1.fname, p2.fname
+
+    INTERSECT
+
+    SELECT s.CID, p1.fname as Suspect_fname, p2.fname as Witness_fname
+    FROM Witness as w
+    JOIN people as p2 ON p2.Aadhar_No = w.Aadhar_No
+    JOIN Suspects as s ON s.CID = w.CID
+    JOIN people as p1 ON p1.Aadhar_No = s.Aadhar_No
+    GROUP BY s.CID, p1.fname, p2.fname
+) AS common_cid;
+
+
+12.Display no. of warrants issued by this each station.
+Select count(Warrant_No),Station_ID FROM Warrant as w JOIN Police_Personal as pp ON w.PID=pp.Police_ID 
+GROUP BY Station_ID;
+
+13.Display the details of the members of the gang name : Ku Klux Klan (white supremacist).
+SELECT fname,mname,lname
+FROM People
+JOIN criminal_detail AS SC ON People.Aadhar_No = SC.Aadhar_No
+WHERE gang_name = 'Ku Klux Klan (white supremacist)';
+
+14.Give name of criminal against whom a case was filed by this police ID=200
+Select CID, Fname FROM ((Solved_Cases as sc NATURAL JOIN Suspects as s)as r1 JOIN All_Case as ac ON r1.CID=ac.Case_ID) as r2 JOIN people as p ON ac.Filed By=p.Aadhar_No) as r3  WHERE filed_by=200;
+
+15.Give the no. of cases solved by each station_incharge:    
+Select station_incharge, count(CID) FROM(( Solved_Cases as sc NATURAL JOIN Workings) as r1 JOIN Police _Personal as pp ON r1.PID=pp.Police_ID ) as r2 JOIN Police_Station as ps ON ps.Station_Incharge=r2.Police_ID  GROUP BY Station_Incharge
+
+16.List of people against whom max warrant is issued.
+Select Aadhar no. FROM (Warrant as w JOIN People as p ) ON w.Against_Aadhar = p.Aadhar_No. GROUP BY Warrant_No.
+
+17.List of Cases whose Verdict was "life sentence" and was solved by people working in PINCODE = "11111".
+SELECT Case_ID FROM(((((All_Cases as A JOIN Working as W ON A.Case_ID = W.CID) AS r1 JOIN Solved_Cases as SC ON r1.CID = SC.CID) AS r2 JOIN Police_Personnel as PP ON r2.PID = PP.Police_ID)as r3 JOIN Police Station as PS ON r3.Station_ID= PS.Aadhar_No.) AS r4 JOIN People as P ON r4.Aadhar_no.= P.Aadhar_No.) WHERE Verdict ="Life Senetnce" AND Pincode = "1111"

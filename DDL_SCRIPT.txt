@@ -1,0 +1,206 @@
+create schema police;
+
+SET SEARCH_PATH TO police;
+
+CREATE TABLE People ( 
+	Aadhar_No int NOT NULL,
+	Fname character varying(20) NOT NULL,
+	Mname character varying(20) ,
+	Lname character varying(20) NOT NULL,
+	DOB DATE,
+	Gender CHAR(1),
+	PRIMARY KEY (Aadhar_No)
+);
+
+CREATE TABLE Police_Personal (
+    Aadhar_No int NOT NULL,
+    Police_ID INT NOT NULL,
+    Station_ID VARCHAR(20) NOT NULL,
+    Rank int,
+    PRIMARY KEY (Police_ID),
+    FOREIGN KEY (Aadhar_No) REFERENCES People(Aadhar_No) ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+CREATE TABLE Police_station (
+Station_Incharge int not null,
+Station_ID varchar(20),
+Pincode int,
+    PRIMARY KEY (Station_ID),
+    FOREIGN KEY (Station_Incharge)
+        REFERENCES Police_Personal(Police_ID)  
+        ON DELETE CASCADE
+        ON UPDATE CASCADE
+);
+
+ALTER TABLE Police_Personal
+ADD FOREIGN KEY (Station_ID) REFERENCES police_station(Station_ID) ON DELETE CASCADE ON UPDATE CASCADE;
+
+CREATE TABLE Current_Case ( 
+	Case_ID int not null,
+	Open_Since date not null,
+	filed_by int not null,
+    PRIMARY KEY (Case_ID), 
+    FOREIGN KEY (filed_by)
+        REFERENCES People(Aadhar_No)   ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+CREATE TABLE Suspects ( 
+    Aadhar_No int not null,
+    CID int not null,
+    Alias varchar(20),
+    PRIMARY KEY (Aadhar_No, CID), 
+    FOREIGN KEY (Aadhar_No)
+        REFERENCES People(Aadhar_No)   
+        ON DELETE CASCADE
+        ON UPDATE CASCADE,
+    FOREIGN KEY (CID)
+        REFERENCES Current_Case(Case_ID)   
+        ON DELETE CASCADE
+        ON UPDATE CASCADE
+);
+
+CREATE TABLE Witness ( 
+    Aadhar_No int not null,
+    CID int not null,
+    Date date not null,
+    PRIMARY KEY (Aadhar_No, CID), 
+    FOREIGN KEY (Aadhar_No)
+        REFERENCES People(Aadhar_No)   
+        ON DELETE CASCADE
+        ON UPDATE CASCADE,
+    FOREIGN KEY (CID)
+        REFERENCES Current_Case(Case_ID)   
+        ON DELETE CASCADE
+        ON UPDATE CASCADE
+);
+
+CREATE TABLE Old_Criminals ( 
+    Aadhar_No int not null,
+    CID int not null,
+	Verdict varchar(20) not null,
+	PRIMARY KEY (Aadhar_No, CID), 
+    FOREIGN KEY (Aadhar_No)
+        REFERENCES People(Aadhar_No)   
+        ON DELETE CASCADE
+        ON UPDATE CASCADE
+    
+);
+CREATE TABLE Inventory ( 
+    SID varchar not null,
+    Name_of_item varchar(20) not null,
+	Quantity int not null ,
+    PRIMARY KEY (Name_of_item, SID), 
+    FOREIGN KEY (SID)
+        REFERENCES Police_Station(Station_ID)   
+        ON DELETE CASCADE
+        ON UPDATE CASCADE
+    
+);
+
+CREATE TABLE Vehicles ( 
+    Registration_No varchar(10) not null,
+    SID varchar(20) not null,
+	Model varchar(50),
+	Purchase_Year int,
+    PRIMARY KEY (Registration_No), 
+    FOREIGN KEY (SID)
+        REFERENCES Police_Station(Station_ID)   
+        ON DELETE CASCADE
+        ON UPDATE CASCADE
+    
+);
+
+ CREATE TABLE Warrant ( 
+    Warrant_No int not null,
+    PID int not null,
+	offence varchar(50),
+	Valid_Till Date,
+	Againt_Aadhar int not null,
+    PRIMARY KEY (Warrant_No), 
+    FOREIGN KEY (PID)
+        REFERENCES Police_Personal(Police_ID)   
+        ON DELETE CASCADE
+        ON UPDATE CASCADE,
+	FOREIGN KEY (Againt_Aadhar)
+        REFERENCES People(Aadhar_No)   
+        ON DELETE CASCADE
+        ON UPDATE CASCADE
+    
+);
+
+ALTER TABLE Current_Case
+RENAME TO All_Case;
+
+Alter TABLE old_criminals
+RENAME TO Solved_cases;
+
+ALTER TABLE solved_cases
+ADD FOREIGN KEY (cid) REFERENCES all_case(case_id) ON DELETE CASCADE ON UPDATE CASCADE;
+
+CREATE TABLE evidence (
+    Item character varying(30) NOT NULL,
+    Place_of_discovery character varying(30) NOT NULL,
+    cid int NOT NULL,
+    PRIMARY KEY (Item, Place_of_discovery,cid),
+    FOREIGN KEY (cid) 
+        REFERENCES All_Case(Case_ID)   
+        ON DELETE CASCADE 
+        ON UPDATE CASCADE
+);
+
+CREATE TABLE workings (
+    pid int not null,
+    cid int NOT NULL,
+    PRIMARY KEY (cid, pid),
+    FOREIGN KEY (cid) 
+        REFERENCES All_Case(Case_ID)   
+        ON DELETE CASCADE 
+        ON UPDATE CASCADE,
+	FOREIGN KEY (pid) 
+        REFERENCES Police_personal(Police_ID)   
+        ON DELETE CASCADE 
+        ON UPDATE CASCADE
+);
+
+ CREATE TABLE shifts (
+    pid int not null,
+    Date date not null,
+	morning char(1),
+	evening char(1),
+    PRIMARY KEY (date, pid),
+	FOREIGN KEY (pid) 
+        REFERENCES Police_personal(Police_ID)   
+        ON DELETE CASCADE 
+        ON UPDATE CASCADE
+);
+
+ CREATE TABLE transfer (
+    pid int not null,
+    Date date not null,
+	Old_Station_ID varchar(20),
+	New_Station_ID varchar(20),
+    PRIMARY KEY (date, pid),
+	FOREIGN KEY (pid) 
+        REFERENCES Police_personal(Police_ID)   
+        ON DELETE CASCADE 
+        ON UPDATE CASCADE
+);
+
+ CREATE TABLE criminal_detail (
+    aadhar_no int not null,
+    gang_name varchar(20),
+    PRIMARY KEY (aadhar_no ),
+	FOREIGN KEY (aadhar_no ) 
+        REFERENCES people(aadhar_no )   
+        ON DELETE CASCADE 
+        ON UPDATE CASCADE
+);
+CREATE TABLE solved_case_details (
+    cid int not null,
+    closing_date date not null,
+    PRIMARY KEY (cid ),
+	FOREIGN KEY (cid ) 
+        REFERENCES all_cases(Case_ID )   
+        ON DELETE CASCADE 
+        ON UPDATE CASCADE
+);
